@@ -29,9 +29,32 @@ def insert_logs(db: Session, logs: list[LogEvent]) -> int:
     return len(records)
 
 
-def get_all_logs(db: Session) -> list[LogRecord]:
-    stmt = select(LogRecord).order_by(LogRecord.timestamp.desc())
+def get_filtered_logs(
+    db: Session,
+    service: str | None = None,
+    level: str | None = None,
+    status_code: int | None = None,
+    trace_id: str | None = None,
+) -> list[LogRecord]:
+
+    stmt = select(LogRecord)
+
+    if service:
+        stmt = stmt.where(LogRecord.service == service)
+
+    if level:
+        stmt = stmt.where(LogRecord.level == level)
+
+    if status_code:
+        stmt = stmt.where(LogRecord.status_code == status_code)
+
+    if trace_id:
+        stmt = stmt.where(LogRecord.trace_id == trace_id)
+
+    stmt = stmt.order_by(LogRecord.timestamp.desc())
+
     result = db.execute(stmt)
+
     return result.scalars().all()
 
 

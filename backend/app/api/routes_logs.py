@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.db.base import SessionLocal
-from app.services.log_service import get_all_logs
+from app.services.log_service import get_filtered_logs
 
 router = APIRouter(prefix="/logs", tags=["logs"])
 
@@ -16,8 +16,21 @@ def get_db():
 
 
 @router.get("")
-def get_logs(db: Session = Depends(get_db)):
-    logs = get_all_logs(db)
+def get_logs(
+    service: str | None = Query(None),
+    level: str | None = Query(None),
+    status_code: int | None = Query(None),
+    trace_id: str | None = Query(None),
+    db: Session = Depends(get_db),
+):
+
+    logs = get_filtered_logs(
+        db=db,
+        service=service,
+        level=level,
+        status_code=status_code,
+        trace_id=trace_id,
+    )
 
     return {
         "count": len(logs),
