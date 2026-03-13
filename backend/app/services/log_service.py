@@ -66,3 +66,19 @@ def get_logs_by_trace_id(db: Session, trace_id: str) -> list[LogRecord]:
     )
     result = db.execute(stmt)
     return result.scalars().all()
+
+def get_incident_candidates(
+    db: Session,
+    slow_latency_threshold: int = 1000,
+) -> list[LogRecord]:
+    stmt = (
+        select(LogRecord)
+        .where(
+            (LogRecord.status_code >= 500) |
+            (LogRecord.latency_ms >= slow_latency_threshold)
+        )
+        .order_by(LogRecord.timestamp.desc())
+    )
+
+    result = db.execute(stmt)
+    return result.scalars().all()
