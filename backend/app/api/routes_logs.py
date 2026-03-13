@@ -1,32 +1,41 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+
+from app.db.base import SessionLocal
+from app.services.log_service import get_all_logs
 
 router = APIRouter(prefix="/logs", tags=["logs"])
 
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 @router.get("")
-def get_logs():
+def get_logs(db: Session = Depends(get_db)):
+    logs = get_all_logs(db)
+
     return {
+        "count": len(logs),
         "logs": [
             {
-                "timestamp": "2026-03-11T20:30:00Z",
-                "service": "orders-service",
-                "level": "ERROR",
-                "trace_id": "trace-123",
-                "endpoint": "POST /orders",
-                "status_code": 500,
-                "latency_ms": 742,
-                "message": "Database timeout while creating order",
-            },
-            {
-                "timestamp": "2026-03-11T20:31:10Z",
-                "service": "orders-service",
-                "level": "INFO",
-                "trace_id": "trace-124",
-                "endpoint": "GET /health",
-                "status_code": 200,
-                "latency_ms": 18,
-                "message": "Health check successful",
-            },
+                "id": str(log.id),
+                "timestamp": log.timestamp.isoformat() if log.timestamp else None,
+                "service": log.service,
+                "level": log.level,
+                "trace_id": log.trace_id,
+                "span_id": log.span_id,
+                "user_id": log.user_id,
+                "endpoint": log.endpoint,
+                "status_code": log.status_code,
+                "latency_ms": log.latency_ms,
+                "message": log.message,
+                "metadata": log.log_metadata,
+            }
+            for log in logs
         ],
-        "count": 2,
     }
