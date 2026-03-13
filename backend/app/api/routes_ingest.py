@@ -1,14 +1,26 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
+from app.db.base import SessionLocal
 from app.schemas.log_event import LogEvent
+from app.services.log_service import insert_logs
 
 router = APIRouter(prefix="/ingest", tags=["ingest"])
 
 
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
 @router.post("")
-def ingest_logs(logs: list[LogEvent]):
+def ingest_logs(logs: list[LogEvent], db: Session = Depends(get_db)):
+    ingested_count = insert_logs(db, logs)
+
     return {
-        "message": "Logs received successfully",
-        "ingested_count": len(logs),
-        "sample_service": logs[0].service if logs else None,
+        "message": "Logs saved successfully",
+        "ingested_count": ingested_count,
     }
