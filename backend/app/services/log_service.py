@@ -1,3 +1,4 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.models import LogRecord
@@ -26,3 +27,9 @@ def insert_logs(db: Session, logs: list[LogEvent]) -> int:
     db.commit()
 
     return len(records)
+
+
+def get_all_logs(db: Session) -> list[LogRecord]:
+    stmt = select(LogRecord).order_by(LogRecord.timestamp.desc())
+    result = db.execute(stmt)
+    return result.scalars().all()
