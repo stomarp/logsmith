@@ -33,3 +33,13 @@ def get_all_logs(db: Session) -> list[LogRecord]:
     stmt = select(LogRecord).order_by(LogRecord.timestamp.desc())
     result = db.execute(stmt)
     return result.scalars().all()
+
+
+def get_logs_by_trace_id(db: Session, trace_id: str) -> list[LogRecord]:
+    stmt = (
+        select(LogRecord)
+        .where(LogRecord.trace_id == trace_id)
+        .order_by(LogRecord.timestamp.asc())
+    )
+    result = db.execute(stmt)
+    return result.scalars().all()
